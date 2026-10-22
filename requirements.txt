@@ -7,3 +7,7 @@ pymupdf>=1.23.0
 python-docx>=1.0.0
 python-dotenv>=1.0.0
 anyio>=3.7.0
+sqlalchemy>=2.0.0
+slowapi>=0.1.9
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4

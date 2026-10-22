@@ -1,6 +1,6 @@
 import os
 from typing import Annotated, Optional
-from fastapi import APIRouter, File, UploadFile, Form, Depends, HTTPException
+from fastapi import APIRouter, File, UploadFile, Form, Depends, HTTPException, Request
 from app.models.schema import ResumeRequest, ResumeResponse
 from app.services.docs_parser import extract_text
 from app.services.skill_extractor import extract_skills
@@ -26,6 +26,7 @@ ALLOWED_EXTENSIONS = {".pdf", ".docx", ".doc", ".txt", ".md"}
 # Endpoint to analyze resume
 @router.post('/analyze-resume', response_model=ResumeResponse)
 async def analyze_resume(
+    request: Request,
     resume: ResumeRequest = Depends(get_resume_request),
     resume_file: UploadFile = File(...),
 ):
