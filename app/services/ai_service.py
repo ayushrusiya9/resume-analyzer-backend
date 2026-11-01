@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from google import genai
@@ -22,7 +23,7 @@ async def generate_ai_analysis(
 ) -> tuple[list[str], list[str]]:
     """
     Generate AI analysis returning a tuple of (strengths, suggestions).
-    Uses Gemini API async call without arbitrary sleeping.
+    Uses Gemini API async call with a strict timeout to guarantee rapid response.
     """
     resume_str = ", ".join(resume_skills) if resume_skills else "None explicitly detected"
     missing_str = ", ".join(missing_skills) if missing_skills else "No major missing skills"
@@ -76,10 +77,13 @@ async def generate_ai_analysis(
     """
 
     try:
-        # Use async call for Gemini model generate_content
-        response = await client.aio.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
+        # Wrap in timeout so user UI never hangs if network / Gemini API is unreachable
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt
+            ),
+            timeout=5.0
         )
 
         raw_text = response.text.strip()
@@ -96,10 +100,10 @@ async def generate_ai_analysis(
         return strengths, suggestions
 
     except Exception as e:
-        logger.error(f"Gemini AI Service Error: {e}")
+        logger.info(f"Using fallback suggestions (Gemini status: {e})")
         return fallback_strengths, fallback_suggestions
 
 # Backward-compatibility alias
 async def generate_suggestions(role: str, resume_skills: list[str], missing_skills: list[str]) -> list[str]:
     _, suggestions = await generate_ai_analysis(role, resume_skills, missing_skills)
-    return suggestions
+    return suggestions

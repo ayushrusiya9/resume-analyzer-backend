@@ -1,22 +1,30 @@
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+import bcrypt
 from datetime import datetime, timedelta
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 from app.config.settings import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.models.database import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against the stored bcrypt hash."""
+    try:
+        pwd_bytes = plain_password.encode("utf-8")[:72]
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
+    except Exception:
+        return False
 
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def get_password_hash(password: str) -> str:
+    """Hash password using direct bcrypt (safe against passlib 72-byte bug)."""
+    pwd_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode("utf-8")
 
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
-
-
-def create_user(db: Session, email: str, password: str):
+def create_user(db: Session, email: str, password: str) -> User:
+    """Create a new user with hashed password."""
     hashed_password = get_password_hash(password)
     user = User(email=email, hashed_password=hashed_password)
     db.add(user)
@@ -25,8 +33,10 @@ def create_user(db: Session, email: str, password: str):
     return user
 
 
-def authenticate_user(db: Session, email: str, password: str):
-    user = db.query(User).filter(User.email == email).first()
+def authenticate_user(db: Session, email: str, password: str) -> User | None:
+    """Authenticate user with email and plain password."""
+    clean_email = email.strip().lower()
+    user = db.query(User).filter(User.email == clean_email).first()
     if not user:
         return None
     if not verify_password(password, user.hashed_password):
@@ -34,7 +44,8 @@ def authenticate_user(db: Session, email: str, password: str):
     return user
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
+    """Generate JWT access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta

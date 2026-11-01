@@ -86,6 +86,8 @@ async def analyze_resume(
     )
     
     return ResumeResponse(
+        company_name=resume.company_name or "",
+        job_title=resume.job_title,
         match_score=overall_match_score,
         skills_score=skills_score,
         resume_skills=extract_resume_skill,
@@ -93,4 +95,3 @@ async def analyze_resume(
         strengths=strengths,
         suggestions=suggestions,
     )
-

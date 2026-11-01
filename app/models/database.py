@@ -11,6 +11,11 @@ engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} i
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
+def init_db():
+    """Create all database tables if they do not exist."""
+    Base.metadata.create_all(bind=engine)
+
+
 def get_db():
     db = SessionLocal()
     try:
@@ -32,7 +37,7 @@ class Analysis(Base):
     __tablename__ = "analyses"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # nullable = anonymous upload OK
-    company_name = Column(String(255))
+    company_name = Column(String(255), nullable=True)
     job_title = Column(String(255), nullable=False)
     match_score = Column(Float, nullable=False)
     skills_score = Column(Float, nullable=False)
