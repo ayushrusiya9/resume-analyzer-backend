@@ -4,14 +4,14 @@ from datetime import timedelta
 from jose import JWTError, jwt
 from app.config.settings import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.models.database import User, get_db
-from app.models.schema import UserRegisterRequest, UserLoginRequest, TokenResponse, UserResponse
+from app.models.schema import UserRegisterRequest, TokenResponse, UserResponse
 from app.services.auth_service import authenticate_user, create_user, create_access_token
 
 router = APIRouter()
 
 
 @router.post("/register")
-async def register(data: UserRegisterRequest, db: Session = Depends(get_db)):
+def register(data: UserRegisterRequest, db: Session = Depends(get_db)):
     """Register a new user using JSON request body."""
     clean_email = data.email.strip().lower()
     existing = db.query(User).filter(User.email == clean_email).first()
@@ -32,7 +32,7 @@ async def register(data: UserRegisterRequest, db: Session = Depends(get_db)):
 async def login(request: Request, db: Session = Depends(get_db)):
     """
     Login and return JWT access token.
-    Supports both JSON body and standard Form data (x-www-form-urlencoded / multipart).
+    Supports both JSON body and Form data (x-www-form-urlencoded / multipart).
     """
     email = None
     password = None
